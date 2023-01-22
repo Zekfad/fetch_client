@@ -1,6 +1,6 @@
 name: fetch_client
 description: Fetch based client for http package, enables streamed requests on web.
-version: 1.0.0-dev.1
+version: 1.0.0-dev.2
 homepage: https://github.com/Zekfad/fetch_client
 repository: https://github.com/Zekfad/fetch_client
 issue_tracker: https://github.com/Zekfad/fetch_client/issues
@@ -13,7 +13,7 @@ environment:
   sdk: '>=2.18.0 <4.0.0'
 
 dependencies:
-  fetch_api: ^1.0.0-dev.1
+  fetch_api: ^1.0.0-dev.2
   http: ^0.13.5
 
 dev_dependencies:
