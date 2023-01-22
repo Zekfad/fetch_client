@@ -1,10 +1,10 @@
 name: fetch_client
 description: Fetch based client for http package, enables streamed requests on web.
 version: 1.0.0-dev.1
-homepage: https://github.com/Zekfad/fetch_api
-repository: https://github.com/Zekfad/fetch_api
-issue_tracker: https://github.com/Zekfad/fetch_api/issues
-# documentation: https://pub.dev/documentation/fetch_api/latest/
+homepage: https://github.com/Zekfad/fetch_client
+repository: https://github.com/Zekfad/fetch_client
+issue_tracker: https://github.com/Zekfad/fetch_client/issues
+# documentation: https://pub.dev/documentation/fetch_client/latest/
 
 platforms:
   web:
