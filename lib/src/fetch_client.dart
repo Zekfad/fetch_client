@@ -14,7 +14,7 @@ import 'on_done.dart';
 /// * [BaseRequest.contentLength] is ignored.
 /// * When [BaseRequest.followRedirects] is `false` request will throw, but
 ///   without any helpful information (this is the limitation of Fetch, if you
-///   need to get target URL, rely on [BaseResponse.isRedirect] and 
+///   need to get target URL, rely on [FetchResponse.redirected] and 
 ///   [FetchResponse.url]).
 /// * [BaseRequest.maxRedirects] is ignored. 
 class FetchClient extends BaseClient {
@@ -51,8 +51,13 @@ class FetchClient extends BaseClient {
 
   final _abortCallbacks = <void Function()>[];
 
+  var _closed = false;
+
   @override
   Future<FetchResponse> send(BaseRequest request) async {
+    if (_closed)
+      throw ClientException('Client is closed', request.url);
+
     final body = await request.finalize().toBytes();
     final abortController = AbortController();
     final init = fetch_compatibility_layer.createRequestInit(
@@ -95,12 +100,14 @@ class FetchClient extends BaseClient {
     _abortCallbacks.add(abort);
 
     final stream = onDone(reader.readAsStream(), abort);
+    final contentLength = response.headers.get('Content-Length');
 
     return FetchResponse(
       stream,
       response.status,
       cancel: abort,
       url: response.url,
+      redirected: response.redirected,
       request: request,
       headers: {
         for (final header in response.headers.entries())
@@ -108,9 +115,11 @@ class FetchClient extends BaseClient {
         if (response.redirected)
           'location': response.url,
       },
-      isRedirect: response.redirected,
+      isRedirect: false,
       persistentConnection: false,
       reasonPhrase: response.statusText,
+      contentLength: contentLength == null ? null
+        : int.tryParse(contentLength),
     );
   }
 
@@ -119,7 +128,10 @@ class FetchClient extends BaseClient {
   /// This terminates all active requests.
   @override
   void close() {
-    for (final abort in _abortCallbacks.toList())
-      abort();
+    if (!_closed) {
+      _closed = true;
+      for (final abort in _abortCallbacks.toList())
+        abort();
+    }
   }
 }

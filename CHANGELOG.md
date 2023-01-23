@@ -1,4 +1,17 @@
-## 1.0.0-dev.2
+## 1.0.0-dev.4
+
+- Bumped `fetch_api` dependency to `^1.0.0-dev.4`.
+- Added conformance test.
+- Full conformance with http client (with exclusion of streamed requests and
+  redirects, due to API limitations).
+- `FetchResponse`
+  - `isRedirect` now is always `false` (because with disabled redirects
+    exception is throws on redirect, and browser always follows redirects
+    otherwise)
+  - Added `redirected` flag, that indicates whether request was redirected.
+  - Added docs.
+
+## 1.0.0-dev.3
 
 - Bumped `fetch_api` dependency to `^1.0.0-dev.3`.
 - Use `fetch_api.compatibility_layer` to support Dart 2.19.

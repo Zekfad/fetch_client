@@ -10,6 +10,7 @@ class FetchResponse extends StreamedResponse {
   FetchResponse(super.stream, super.statusCode, {
     required this.cancel,
     required this.url,
+    required this.redirected,
     super.contentLength,
     super.request,
     super.headers,
@@ -21,5 +22,9 @@ class FetchResponse extends StreamedResponse {
   /// Cancels current request.
   final void Function() cancel;
 
+  /// Target resource url (the one after redirects, if there are some).
   final String url;
+
+  /// Whether browser was redirected before loading actual resource.
+  final bool redirected;
 }

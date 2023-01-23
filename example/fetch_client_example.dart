@@ -9,7 +9,7 @@ void main() async {
   final uri = Uri.https('jsonplaceholder.typicode.com', '/todos/1');
   final response = await client.send(Request('GET', uri));
 
-  print(response.isRedirect);
+  print(response.redirected);
   print(response.url);
 
   print(await utf8.decodeStream(response.stream));
