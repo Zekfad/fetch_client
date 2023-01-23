@@ -1,3 +1,4 @@
+import 'package:fetch_api/compatibility_layer.dart' as fetch_compatibility_layer;
 import 'package:fetch_api/fetch_api.dart';
 import 'package:http/http.dart' show BaseClient, BaseRequest, BaseResponse, ClientException;
 import 'fetch_response.dart';
@@ -54,13 +55,13 @@ class FetchClient extends BaseClient {
   Future<FetchResponse> send(BaseRequest request) async {
     final body = await request.finalize().toBytes();
     final abortController = AbortController();
-    final init = RequestInit(
+    final init = fetch_compatibility_layer.createRequestInit(
       body: body.isEmpty ? null : body,
       method: request.method,
       redirect: request.followRedirects
         ? RequestRedirect.follow
         : RequestRedirect.error,
-      headers: Headers.fromMap(request.headers),
+      headers: fetch_compatibility_layer.createHeadersFromMap(request.headers),
       mode: mode,
       credentials: credentials,
       cache: cache,
