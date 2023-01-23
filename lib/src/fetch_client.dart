@@ -1,6 +1,6 @@
 import 'package:fetch_api/compatibility_layer.dart' as fetch_compatibility_layer;
 import 'package:fetch_api/fetch_api.dart';
-import 'package:http/http.dart' show BaseClient, BaseRequest, BaseResponse, ClientException;
+import 'package:http/http.dart' show BaseClient, BaseRequest, ClientException;
 import 'fetch_response.dart';
 import 'on_done.dart';
 
