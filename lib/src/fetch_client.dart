@@ -3,6 +3,7 @@ import 'package:fetch_api/fetch_api.dart';
 import 'package:http/http.dart' show BaseClient, BaseRequest, ClientException;
 import 'fetch_response.dart';
 import 'on_done.dart';
+import 'redirect_policy.dart';
 
 
 /// HTTP client based on Fetch API.
@@ -10,12 +11,12 @@ import 'on_done.dart';
 /// 
 /// This implementation has some restrictions:
 /// * [BaseRequest.persistentConnection] is translated to
-///   [RequestInit.keepalive].
+///   [FetchOptions.keepalive] (if [streamRequests] is disabled).
 /// * [BaseRequest.contentLength] is ignored.
-/// * When [BaseRequest.followRedirects] is `false` request will throw, but
-///   without any helpful information (this is the limitation of Fetch, if you
-///   need to get target URL, rely on [FetchResponse.redirected] and 
-///   [FetchResponse.url]).
+/// * When [BaseRequest.followRedirects] is `true` you can get redirect
+///   information via [FetchResponse.redirected] and [FetchResponse.url]).
+///   If [BaseRequest.followRedirects] is `false` [redirectPolicy] takes place
+///   and dictates [FetchClient] actions.
 /// * [BaseRequest.maxRedirects] is ignored. 
 class FetchClient extends BaseClient {
   FetchClient({
@@ -25,6 +26,8 @@ class FetchClient extends BaseClient {
     this.referrer = '',
     this.referrerPolicy = RequestReferrerPolicy.strictOriginWhenCrossOrigin,
     this.integrity = '',
+    this.redirectPolicy = RedirectPolicy.alwaysFollow, 
+    this.streamRequests = false,
   });
 
   /// The mode you want to use for the request
@@ -49,6 +52,16 @@ class FetchClient extends BaseClient {
   /// (e.g.,`sha256-BpfBw7ivV8q2jLiT13fxDYAe2tJllusRSZ273h2nFSE=`)
   final String integrity;
 
+  /// Client redirect policy, defines how client should handle
+  /// [BaseRequest.followRedirects].
+  final RedirectPolicy redirectPolicy;
+
+  /// Whether to use [ReadableStream] as body for requests streaming.
+  /// 
+  /// This feature is unsupported in old browsers, check
+  /// [compatibility chart](https://developer.mozilla.org/en-US/docs/Web/API/Request#browser_compatibility).
+  final bool streamRequests;
+
   final _abortCallbacks = <void Function()>[];
 
   var _closed = false;
@@ -58,27 +71,54 @@ class FetchClient extends BaseClient {
     if (_closed)
       throw ClientException('Client is closed', request.url);
 
-    final body = await request.finalize().toBytes();
+    final byteStream = request.finalize();
+    final dynamic body;
+    if (['GET', 'HEAD'].contains(request.method.toUpperCase()))
+      body = null;
+    else if (streamRequests) {
+      body = fetch_compatibility_layer.createReadableStream(
+        fetch_compatibility_layer.createReadableStreamSourceFromStream(
+          byteStream,
+        ),
+      );
+    } else {
+      final bytes = await byteStream.toBytes();
+      body = bytes.isEmpty ? null : bytes;
+    }
+
     final abortController = AbortController();
-    final init = fetch_compatibility_layer.createRequestInit(
-      body: body.isEmpty ? null : body,
+    final init = fetch_compatibility_layer.createFetchOptions(
+      body: body,
       method: request.method,
-      redirect: request.followRedirects
+      redirect: (request.followRedirects || redirectPolicy == RedirectPolicy.alwaysFollow)
         ? RequestRedirect.follow
-        : RequestRedirect.error,
+        : RequestRedirect.manual,
       headers: fetch_compatibility_layer.createHeadersFromMap(request.headers),
       mode: mode,
       credentials: credentials,
       cache: cache,
       referrer: referrer,
       referrerPolicy: referrerPolicy,
-      keepalive: request.persistentConnection,
+      keepalive: !streamRequests && request.persistentConnection,
       signal: abortController.signal,
+      duplex: !streamRequests ? null : RequestDuplex.half,
     );
 
     final Response response;
     try {
       response = await fetch(request.url.toString(), init);
+
+      if (
+        response.type == 'opaqueredirect' &&
+        !request.followRedirects &&
+        redirectPolicy != RedirectPolicy.alwaysFollow
+      )
+        return _probeRedirect(
+          request: request,
+          initialResponse: response,
+          init: init,
+          abortController: abortController,
+        );
     } catch (e) {
       throw ClientException('Failed to execute fetch: $e', request.url);
     }
@@ -112,14 +152,56 @@ class FetchClient extends BaseClient {
       headers: {
         for (final header in response.headers.entries())
           header.first: header.last,
-        if (response.redirected)
-          'location': response.url,
       },
       isRedirect: false,
       persistentConnection: false,
       reasonPhrase: response.statusText,
       contentLength: contentLength == null ? null
         : int.tryParse(contentLength),
+    );
+  }
+
+  /// Makes probe request and returns "redirect" response.
+  Future<FetchResponse> _probeRedirect({
+    required BaseRequest request,
+    required Response initialResponse,
+    required FetchOptions init,
+    required AbortController abortController,
+  }) async {
+    init.requestRedirect = RequestRedirect.follow;
+
+    if (redirectPolicy == RedirectPolicy.probeHead)
+      init.method = 'HEAD';
+    else
+      init.method = 'GET';
+
+    final Response response;
+    try {
+      response = await fetch(request.url.toString(), init);
+
+      // Cancel before even reading response
+      if (redirectPolicy == RedirectPolicy.probe)
+        abortController.abort();
+    } catch (e) {
+      throw ClientException('Failed to execute probe fetch: $e', request.url);
+    }
+
+    return FetchResponse(
+      const Stream.empty(),
+      302,
+      cancel: () {},
+      url: initialResponse.url,
+      redirected: false,
+      request: request,
+      headers: {
+        for (final header in response.headers.entries())
+          header.first: header.last,
+        'location': response.url,
+      },
+      isRedirect: true,
+      persistentConnection: false,
+      reasonPhrase: 'Found',
+      contentLength: null,
     );
   }
 
