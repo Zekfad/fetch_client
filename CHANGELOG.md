@@ -1,3 +1,11 @@
+## 1.0.0-dev.5
+
+- Added `RedirectPolicy`, that will make it possible to partially emulate how
+  redirects are returned on `io` platforms.
+- Added `streamRequests` option to `FetchClient`. This allows you to use Fetch
+  request body streaming utilizing half-duplex connection.
+- Fixed dev dependencies versions to allow running on Dart 2.19.
+
 ## 1.0.0-dev.4
 
 - Bumped `fetch_api` dependency to `^1.0.0-dev.4`.
