@@ -1,4 +1,4 @@
-## 1.0.0-dev.5
+## 1.0.0
 
 - Public stable release.
 - Bumped `fetch_api` to 1.0.0.
