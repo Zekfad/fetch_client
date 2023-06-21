@@ -13,6 +13,7 @@ void main() {
       canStreamRequestBody: false,
       canStreamResponseBody: true,
       redirectAlwaysAllowed: true,
+      canWorkInIsolates: false,
     );
   });
 
@@ -25,6 +26,7 @@ void main() {
       canStreamRequestBody: false,
       canStreamResponseBody: true,
       redirectAlwaysAllowed: true,
+      canWorkInIsolates: false,
     );
   });
 
@@ -37,11 +39,12 @@ void main() {
       canStreamRequestBody: false,
       canStreamResponseBody: true,
       redirectAlwaysAllowed: true,
+      canWorkInIsolates: false,
     );
   });
 
   // Fails with ERR_H2_OR_QUIC_REQUIRED
-  // That means server must support request streaming is some special form
+  // That means server must support request streaming in some special form
   // or something.
   // group('client conformance tests with streaming mode', () {
   //   testAll(
@@ -52,6 +55,7 @@ void main() {
   //     canStreamRequestBody: true,
   //     canStreamResponseBody: true,
   //     redirectAlwaysAllowed: true,
+  //     canWorkInIsolates: false,
   //   );
   // });
 }

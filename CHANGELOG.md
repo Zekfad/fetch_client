@@ -1,3 +1,9 @@
+## 1.0.1
+
+- Update [`http`](https://pub.dev/packages/http) constraint
+  to `>=0.13.5 <2.0.0`.
+- Update test.
+
 ## 1.0.0
 
 - Public stable release.
