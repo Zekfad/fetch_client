@@ -58,8 +58,12 @@ class FetchClient extends BaseClient {
 
   /// Whether to use [ReadableStream] as body for requests streaming.
   /// 
-  /// This feature is unsupported in old browsers, check
-  /// [compatibility chart](https://developer.mozilla.org/en-US/docs/Web/API/Request#browser_compatibility).
+  /// **NOTICE**: This feature is supported only in __Chromium 105+__ based browsers and
+  /// requires server to be HTTP/2 or HTTP/3.
+  /// 
+  /// See [compatibility chart](https://developer.mozilla.org/en-US/docs/Web/API/Request#browser_compatibility)
+  /// and [Chrome Developers blog](https://developer.chrome.com/articles/fetch-streaming-requests/#doesnt-work-on-http1x)
+  /// for more info.
   final bool streamRequests;
 
   final _abortCallbacks = <void Function()>[];
@@ -207,7 +211,7 @@ class FetchClient extends BaseClient {
 
   /// Closes the client.
   ///
-  /// This terminates all active requests.
+  /// This method also terminates all associated active requests.
   @override
   void close() {
     if (!_closed) {

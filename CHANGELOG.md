@@ -1,3 +1,7 @@
+## 1.0.2
+
+- Update docs to clarify compatibility restrictions.
+
 ## 1.0.1
 
 - Update [`http`](https://pub.dev/packages/http) constraint
