@@ -2,7 +2,7 @@ name: fetch_client
 description: >
   Client for http package based on Fetch API, enables streamed and cancelable
   requests on web and more.
-version: 1.0.2
+version: 1.1.0
 homepage: https://github.com/Zekfad/fetch_client
 repository: https://github.com/Zekfad/fetch_client
 issue_tracker: https://github.com/Zekfad/fetch_client/issues
@@ -15,23 +15,23 @@ platforms:
   web:
 
 environment:
-  sdk: '>=2.19.0 <4.0.0'
+  sdk: '>=3.3.0-0 <4.0.0'
 
 dependencies:
-  fetch_api: ^1.0.0
-  http: '>=0.13.5 <2.0.0'
+  fetch_api: ^2.0.0
+  http: ^1.2.0
 
 # dependency_overrides:
 #   fetch_api:
 #     git: https://github.com/Zekfad/fetch_api
 
 dev_dependencies:
-  build_runner: '>=2.4.6'
-  build_web_compilers: '>=4.0.4'
+  build_runner: '>=2.4.8'
+  build_web_compilers: '>=4.0.9'
   http_client_conformance_tests:
     git:
       url: https://github.com/dart-lang/http
       ref: master
       path: pkgs/http_client_conformance_tests
   test: ^1.24.4
-  zekfad_lints: ^1.2.0
+  zekfad_lints: ^2.0.0
