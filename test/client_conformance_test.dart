@@ -14,6 +14,9 @@ void main() {
       canStreamResponseBody: true,
       redirectAlwaysAllowed: true,
       canWorkInIsolates: false,
+      canReceiveSetCookieHeaders: false,
+      canSendCookieHeaders: false,
+      preservesMethodCase: false,
     );
   });
 
@@ -27,6 +30,9 @@ void main() {
       canStreamResponseBody: true,
       redirectAlwaysAllowed: true,
       canWorkInIsolates: false,
+      canReceiveSetCookieHeaders: false,
+      canSendCookieHeaders: false,
+      preservesMethodCase: false,
     );
   });
 
@@ -40,6 +46,9 @@ void main() {
       canStreamResponseBody: true,
       redirectAlwaysAllowed: true,
       canWorkInIsolates: false,
+      canReceiveSetCookieHeaders: false,
+      canSendCookieHeaders: false,
+      preservesMethodCase: false,
     );
   });
 
