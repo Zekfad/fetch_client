@@ -1,3 +1,11 @@
+## 1.1.0
+
+> Requires Dart 3.3
+
+- Migrate to [`fetch_api`](https://pub.dev/packages/fetch_api) 2.0.0.
+  This requires Dart 3.3, but makes package WASM ready.
+- Update [`http`](https://pub.dev/packages/http) constraint to `^1.2.0`.
+
 ## 1.0.2
 
 - Update docs to clarify compatibility restrictions.
