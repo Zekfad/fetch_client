@@ -1,4 +1,4 @@
-import 'package:fetch_api/fetch_api.dart' show RequestRedirect, ResponseInstanceMembers;
+import 'package:fetch_api/fetch_api.dart' show RequestRedirect, Response;
 
 import 'fetch_client.dart';
 import 'fetch_response.dart';
@@ -17,7 +17,7 @@ enum RedirectPolicy {
   /// 
   /// If redirect is occurred additional `GET` request will be send and canceled
   /// before body will be available. Returning response with only headers and
-  /// artificial `Location` header crafted from [ResponseInstanceMembers.url].
+  /// artificial `Location` header crafted from [Response.url].
   /// 
   /// Note that such response will always be crafted as `302 Found` and there's
   /// no way to get intermediate redirects, so you will get target redirect as

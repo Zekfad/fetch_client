@@ -1,4 +1,5 @@
-import 'package:fetch_api/compatibility_layer.dart' as fetch_compatibility_layer;
+import 'dart:js_interop';
+
 import 'package:fetch_api/fetch_api.dart';
 import 'package:http/http.dart' show BaseClient, BaseRequest, ClientException;
 import 'fetch_response.dart';
@@ -76,34 +77,40 @@ class FetchClient extends BaseClient {
       throw ClientException('Client is closed', request.url);
 
     final byteStream = request.finalize();
-    final dynamic body;
-    if (['GET', 'HEAD'].contains(request.method.toUpperCase()))
+    final RequestBody? body;
+    final int bodySize;
+    if (['GET', 'HEAD'].contains(request.method.toUpperCase())) {
       body = null;
-    else if (streamRequests) {
-      body = fetch_compatibility_layer.createReadableStream(
-        fetch_compatibility_layer.createReadableStreamSourceFromStream(
-          byteStream,
+      bodySize = 0;
+    } else if (streamRequests) {
+      body = RequestBody.fromReadableStream(
+        ReadableStream(
+          ReadableStreamSource.fromStream(byteStream.cast<JSNumber>()),
         ),
       );
+      bodySize = -1;
     } else {
       final bytes = await byteStream.toBytes();
-      body = bytes.isEmpty ? null : bytes;
+      body = bytes.isEmpty
+        ? null
+        : RequestBody.fromTypedData(bytes);
+      bodySize = bytes.lengthInBytes;
     }
 
     final abortController = AbortController();
-    final init = fetch_compatibility_layer.createFetchOptions(
+    final init = FetchOptions(
       body: body,
       method: request.method,
       redirect: (request.followRedirects || redirectPolicy == RedirectPolicy.alwaysFollow)
         ? RequestRedirect.follow
         : RequestRedirect.manual,
-      headers: fetch_compatibility_layer.createHeadersFromMap(request.headers),
+      headers: Headers.fromMap(request.headers),
       mode: mode,
       credentials: credentials,
       cache: cache,
       referrer: referrer,
       referrerPolicy: referrerPolicy,
-      keepalive: !streamRequests && request.persistentConnection,
+      keepalive: bodySize < 63 * 1024 && !streamRequests && request.persistentConnection,
       signal: abortController.signal,
       duplex: !streamRequests ? null : RequestDuplex.half,
     );
@@ -138,13 +145,19 @@ class FetchClient extends BaseClient {
     late final void Function() abort;
     abort = () {
       _abortCallbacks.remove(abort);
-      reader.cancel<dynamic>();
+      reader.cancel();
       abortController.abort();
     };
     _abortCallbacks.add(abort);
 
     final stream = onDone(reader.readAsStream(), abort);
-    final contentLength = response.headers.get('Content-Length');
+    final int? contentLength;
+    if (response.headers.get('Content-Length') case final value?) {
+      contentLength = int.tryParse(value);
+      if (contentLength == null || contentLength < 0)
+        throw ClientException('Content-Length header must be a positive integer value.');
+    } else
+      contentLength = null;
 
     return FetchResponse(
       stream,
@@ -154,14 +167,13 @@ class FetchClient extends BaseClient {
       redirected: response.redirected,
       request: request,
       headers: {
-        for (final header in response.headers.entries())
-          header.first: header.last,
+        for (final (name, value) in response.headers.entries())
+          name: value,
       },
       isRedirect: false,
       persistentConnection: false,
       reasonPhrase: response.statusText,
-      contentLength: contentLength == null ? null
-        : int.tryParse(contentLength),
+      contentLength: contentLength,
     );
   }
 
@@ -198,8 +210,8 @@ class FetchClient extends BaseClient {
       redirected: false,
       request: request,
       headers: {
-        for (final header in response.headers.entries())
-          header.first: header.last,
+        for (final (name, value) in response.headers.entries())
+          name: value,
         'location': response.url,
       },
       isRedirect: true,
