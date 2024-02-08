@@ -17,6 +17,7 @@ void main() {
       canReceiveSetCookieHeaders: false,
       canSendCookieHeaders: false,
       preservesMethodCase: false,
+      canRelyOnContentLength: false,
     );
   });
 
@@ -33,6 +34,7 @@ void main() {
       canReceiveSetCookieHeaders: false,
       canSendCookieHeaders: false,
       preservesMethodCase: false,
+      canRelyOnContentLength: false,
     );
   });
 
@@ -49,6 +51,7 @@ void main() {
       canReceiveSetCookieHeaders: false,
       canSendCookieHeaders: false,
       preservesMethodCase: false,
+      canRelyOnContentLength: false,
     );
   });
 
