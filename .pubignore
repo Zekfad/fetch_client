@@ -3,3 +3,7 @@
 
 doc/
 web/
+test/
+analysis_options.yaml
+dart_test.yaml
+.gitignore
