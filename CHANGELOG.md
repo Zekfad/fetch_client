@@ -1,4 +1,4 @@
-## 1.1.0
+## 1.1.0-wasm
 
 > Requires Dart 3.3
 
