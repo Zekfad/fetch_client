@@ -4,13 +4,15 @@
 [![package publisher](https://img.shields.io/pub/publisher/fetch_client.svg)](https://pub.dev/packages/fetch_client/publisher)
 
 This package provides [package:http](https://pub.dev/packages/http) client based
-on [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API).
+on [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) with
+WASM support.
 
 It's a drop-in solution for extensions with
 [Manifest V3](https://developer.chrome.com/docs/extensions/mv3/intro/#introducing-manifest-v3).
 
 ## Features
 
+* WASM-ready internals.
 * Cancel requests.
 * Support data streaming:
   * Get response as `Stream`.
@@ -38,9 +40,8 @@ Fetch spec says that maximum request size with `keepalive` flag is 64KiB:
 > _Source: [Fetch. Living Standard — Last Updated 19 June 2023](https://fetch.spec.whatwg.org/#http-network-or-cache-fetch)_
 
 Therefore if your request is larger than 64KiB (this includes some other data,
-so effectively recommended check is _60KiB_) you must **explicitly** set
-[`BaseRequest.persistentConnection`](https://pub.dev/documentation/http/latest/http/BaseRequest/persistentConnection.html)
-to `false`, otherwise request will fail.
+such as headers) [`BaseRequest.persistentConnection`](https://pub.dev/documentation/http/latest/http/BaseRequest/persistentConnection.html)
+will be ignored and threated as `false`.
 
 ### Request streaming
 
