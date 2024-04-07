@@ -5,7 +5,6 @@ import 'package:fetch_client/fetch_client.dart';
 import 'package:http_client_conformance_tests/http_client_conformance_tests.dart';
 import 'package:test/test.dart';
 
-
 void main() {
   group('client conformance tests', () {
     testAll(
@@ -17,7 +16,6 @@ void main() {
       canReceiveSetCookieHeaders: false,
       canSendCookieHeaders: false,
       preservesMethodCase: false,
-      canRelyOnContentLength: false,
     );
   });
 
@@ -34,7 +32,6 @@ void main() {
       canReceiveSetCookieHeaders: false,
       canSendCookieHeaders: false,
       preservesMethodCase: false,
-      canRelyOnContentLength: false,
     );
   });
 
@@ -51,7 +48,6 @@ void main() {
       canReceiveSetCookieHeaders: false,
       canSendCookieHeaders: false,
       preservesMethodCase: false,
-      canRelyOnContentLength: false,
     );
   });
 

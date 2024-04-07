@@ -115,6 +115,13 @@ class FetchClient extends BaseClient {
       duplex: !streamRequests ? null : RequestDuplex.half,
     );
 
+    late final void Function() abortRequest;
+    abortRequest = () {
+      _abortCallbacks.remove(abortRequest);
+      abortController.abort();
+    };
+    _abortCallbacks.add(abortRequest);
+
     final Response response;
     try {
       response = await fetch(request.url.toString(), init);
@@ -141,6 +148,8 @@ class FetchClient extends BaseClient {
       );
 
     final reader = response.body!.getReader();
+	
+    _abortCallbacks.remove(abortRequest);
 
     late final void Function() abort;
     abort = () {
