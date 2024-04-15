@@ -20,6 +20,12 @@ import 'redirect_policy.dart';
 ///   If [BaseRequest.followRedirects] is `false` [redirectPolicy] takes place
 ///   and dictates [FetchClient] actions.
 /// * [BaseRequest.maxRedirects] is ignored. 
+/// * [FetchClient.streamRequests] is supported only in __Chromium 105+__ based
+///   browsers and requires server to be HTTP/2 or HTTP/3.
+///   
+///   See [compatibility chart](https://developer.mozilla.org/en-US/docs/Web/API/Request#browser_compatibility)
+///   and [Chrome Developers blog](https://developer.chrome.com/articles/fetch-streaming-requests/#doesnt-work-on-http1x)
+///   for more info.
 class FetchClient extends BaseClient {
   FetchClient({
     this.mode = RequestMode.noCors,
