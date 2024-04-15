@@ -7,3 +7,4 @@ test/
 analysis_options.yaml
 dart_test.yaml
 .gitignore
+pubspec_overrides.yaml
