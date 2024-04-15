@@ -1,4 +1,5 @@
 import 'dart:js_interop';
+import 'dart:typed_data';
 
 import 'package:fetch_api/fetch_api.dart';
 import 'package:http/http.dart' show BaseClient, BaseRequest, ClientException;
@@ -75,11 +76,11 @@ class FetchClient extends BaseClient {
   Future<FetchResponse> send(BaseRequest request) async {
     if (_closed)
       throw ClientException('Client is closed', request.url);
-
+    final requestMethod = request.method.toUpperCase();
     final byteStream = request.finalize();
     final RequestBody? body;
     final int bodySize;
-    if (['GET', 'HEAD'].contains(request.method.toUpperCase())) {
+    if (['GET', 'HEAD'].contains(requestMethod)) {
       body = null;
       bodySize = 0;
     } else if (streamRequests) {
@@ -117,7 +118,10 @@ class FetchClient extends BaseClient {
 
     final Response response;
     try {
-      response = await fetch(request.url.toString(), init);
+      response = await _abortOnCloseSafeGuard(
+        () => fetch(request.url.toString(), init),
+        abortController,
+      );
 
       if (
         response.type == 'opaqueredirect' &&
@@ -140,30 +144,73 @@ class FetchClient extends BaseClient {
         request.url,
       );
 
-    final reader = response.body!.getReader();
+    if (response.body == null && requestMethod != 'HEAD')
+      throw StateError('Invalid state: missing body with non-HEAD request.');
+
+    final reader = response.body?.getReader();
 
     late final void Function() abort;
     abort = () {
       _abortCallbacks.remove(abort);
-      reader.cancel();
+      reader?.cancel();
       abortController.abort();
     };
     _abortCallbacks.add(abort);
 
-    final stream = onDone(reader.readAsStream(), abort);
     final int? contentLength;
+    final int? expectedBodyLength;
     if (response.headers.get('Content-Length') case final value?) {
       contentLength = int.tryParse(value);
       if (contentLength == null || contentLength < 0)
-        throw ClientException('Content-Length header must be a positive integer value.');
-    } else
+        throw ClientException('Content-Length header must be a positive integer value.', request.url);
+
+      // Although `identity` SHOULD NOT be used in the Content-Encoding
+      // according to [RFC 2616](https://www.rfc-editor.org/rfc/rfc2616#section-3.5),
+      // we'll handle this edge case anyway.
+      final encoding = response.headers.get('Content-Encoding');
+      if (response.type == 'cors') {
+        // For cors response we should ensure that we actually have access to
+        // Content-Encoding header, otherwise response can be encoded but
+        // we won't be able to detect it.
+        final exposedHeaders = response.headers.get('Access-Control-Expose-Headers')?.toLowerCase();
+        if (exposedHeaders != null && (
+          exposedHeaders.contains('*') ||
+          exposedHeaders.contains('content-encoding')
+        ) && (
+          encoding == null ||
+          encoding.toLowerCase() == 'identity'
+        ))
+          expectedBodyLength = contentLength;
+        else
+          expectedBodyLength = null;
+      } else {
+        // In non-cors response we have access to Content-Encoding header
+        if (encoding == null || encoding.toLowerCase() == 'identity')
+          expectedBodyLength = contentLength;
+        else
+          expectedBodyLength = null;
+      }
+    } else {
       contentLength = null;
+      expectedBodyLength = null;
+    }
+
+    final stream = onDone(
+      reader == null
+        ? const Stream<Uint8List>.empty()
+        : _readAsStream(
+          reader: reader,
+          expectedLength: expectedBodyLength,
+          uri: request.url,
+        ),
+      abort,
+    );
 
     return FetchResponse(
       stream,
       response.status,
       cancel: abort,
-      url: response.url,
+      url: Uri.parse(response.url),
       redirected: response.redirected,
       request: request,
       headers: {
@@ -193,7 +240,10 @@ class FetchClient extends BaseClient {
 
     final Response response;
     try {
-      response = await fetch(request.url.toString(), init);
+      response = await _abortOnCloseSafeGuard(
+        () => fetch(request.url.toString(), init),
+        abortController,
+      );
 
       // Cancel before even reading response
       if (redirectPolicy == RedirectPolicy.probe)
@@ -206,7 +256,7 @@ class FetchClient extends BaseClient {
       const Stream.empty(),
       302,
       cancel: () {},
-      url: initialResponse.url,
+      url: Uri.parse(initialResponse.url),
       redirected: false,
       request: request,
       headers: {
@@ -219,6 +269,53 @@ class FetchClient extends BaseClient {
       reasonPhrase: 'Found',
       contentLength: null,
     );
+  }
+
+  /// Aborts [abortController] if [close] is called while preforming an [action]. 
+  Future<T> _abortOnCloseSafeGuard<T, AbortType extends JSAny>(
+    Future<T> Function() action,
+    AbortController<AbortType> abortController,
+  ) async {
+    late final void Function() abortOnCloseSafeGuard;
+    abortOnCloseSafeGuard = () {
+      _abortCallbacks.remove(abortOnCloseSafeGuard);
+      abortController.abort();
+    };
+    _abortCallbacks.add(abortOnCloseSafeGuard);
+    try {
+      // Await is mandatory here.
+      return await action();
+    } finally {
+      // Abort wont make a difference anymore, so we remove unnecessary
+      // reference.
+      _abortCallbacks.remove(abortOnCloseSafeGuard);
+    }
+  }
+
+  /// Reads [reader] via [ReadableStreamDefaultReader.readAsStream] and
+  /// optionally checks that read data have [expectedLength].
+  Stream<Uint8List> _readAsStream<T extends JSAny, AbortType extends JSAny>({
+    required ReadableStreamDefaultReader<T, AbortType> reader,
+    required int? expectedLength,
+    required Uri uri,
+  }) async* {
+    final stream = reader.readAsStream();
+    var length = 0;
+
+    try {
+      await for (final chunk in stream) {
+        yield chunk;
+        length += chunk.lengthInBytes;
+        if (expectedLength != null && length > expectedLength)
+          throw ClientException('Content-Length is smaller than actual response length.', uri);
+      }
+      if (expectedLength != null && length < expectedLength)
+        throw ClientException('Content-Length is larger than actual response length.', uri);
+    } on ClientException {
+      rethrow;
+    } catch (e) {
+      throw ClientException('Error occurred while reading response body: $e', uri);
+    }
   }
 
   /// Closes the client.

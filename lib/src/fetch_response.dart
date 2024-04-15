@@ -1,9 +1,9 @@
-import 'package:http/http.dart' show StreamedResponse;
+import 'package:http/http.dart' show BaseResponseWithUrl, StreamedResponse;
 
 
 /// [StreamedResponse] with additional capability to [cancel] request and access
 /// to final (after redirects) request [url].
-class FetchResponse extends StreamedResponse {
+class FetchResponse extends StreamedResponse implements BaseResponseWithUrl {
   /// Creates a new cancelable streaming response.
   ///
   /// [stream] should be a single-subscription stream.
@@ -23,7 +23,8 @@ class FetchResponse extends StreamedResponse {
   final void Function() cancel;
 
   /// Target resource url (the one after redirects, if there are some).
-  final String url;
+  @override
+  final Uri url;
 
   /// Whether browser was redirected before loading actual resource.
   final bool redirected;
