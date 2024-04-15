@@ -1,10 +1,16 @@
-## 1.1.0-wasm
+## 1.1.0
 
 > Requires Dart 3.3
 
 - Migrate to [`fetch_api`](https://pub.dev/packages/fetch_api) 2.0.0.
   This requires Dart 3.3, but makes package WASM ready.
 - Update [`http`](https://pub.dev/packages/http) constraint to `^1.2.0`.
+- **BREAKING**: `FetchResponse` `url` now is `Uri` instead of `String`.
+- `FetchResponse` now implements `BaseResponseWithUrl`.
+- Fix unclosed requests after client is closed in-between fetch request.
+- Fix `HEAD` request in FireFox.
+- Handle response length checks.
+
 
 ## 1.0.2
 
