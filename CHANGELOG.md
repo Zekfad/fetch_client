@@ -10,6 +10,10 @@
 - Fix unclosed requests after client is closed in-between fetch request.
 - Fix `HEAD` request in FireFox.
 - Handle response length checks.
+- Add `FetchRequest` class that wraps other `Request` to provide fetch options
+  overrides.
+- Removed `integrity` from `FetchClient` constructor as it wasn't used, use
+  `FetchRequest.integrity` instead.
 
 
 ## 1.0.2
