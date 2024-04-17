@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:fetch_api/fetch_api.dart';
 import 'package:http/http.dart' show BaseClient, BaseRequest, ClientException;
+import 'fetch_request.dart';
 import 'fetch_response.dart';
 import 'on_done.dart';
 import 'redirect_policy.dart';
@@ -27,40 +28,36 @@ import 'redirect_policy.dart';
 ///   and [Chrome Developers blog](https://developer.chrome.com/articles/fetch-streaming-requests/#doesnt-work-on-http1x)
 ///   for more info.
 class FetchClient extends BaseClient {
+  /// Create new HTTP client based on Fetch API.
   FetchClient({
     this.mode = RequestMode.noCors,
     this.credentials = RequestCredentials.sameOrigin,
     this.cache = RequestCache.byDefault,
     this.referrer = '',
     this.referrerPolicy = RequestReferrerPolicy.strictOriginWhenCrossOrigin,
-    this.integrity = '',
     this.redirectPolicy = RedirectPolicy.alwaysFollow, 
     this.streamRequests = false,
   });
 
-  /// The mode you want to use for the request
+  /// The default request mode.
   final RequestMode mode;
 
-  /// Controls what browsers do with credentials (cookies, HTTP authentication
-  /// entries, and TLS client certificates).
+  /// The default credentials mode, defines what browsers do with credentials
+  /// (cookies, HTTP authentication entries, and TLS client certificates).
   final RequestCredentials credentials;
 
-  /// A string indicating how the request will interact with the browser's
-  /// HTTP cache.
+  /// The default cache mode which controls how requests will interact with
+  /// the browser's HTTP cache.
   final RequestCache cache;
 
-  /// A string specifying the referrer of the request.
+  /// The default referrer.
   /// This can be a same-origin URL, `about:client`, or an empty string.
   final String referrer;
 
-  /// Specifies the referrer policy to use for the request.
+  /// The default referrer policy.
   final RequestReferrerPolicy referrerPolicy;
 
-  /// Contains the subresource integrity value of the request
-  /// (e.g.,`sha256-BpfBw7ivV8q2jLiT13fxDYAe2tJllusRSZ273h2nFSE=`)
-  final String integrity;
-
-  /// Client redirect policy, defines how client should handle
+  /// The default redirect policy, defines how client should handle
   /// [BaseRequest.followRedirects].
   final RedirectPolicy redirectPolicy;
 
@@ -105,18 +102,24 @@ class FetchClient extends BaseClient {
     }
 
     final abortController = AbortController();
+
+    final fetchRequest = request is! FetchRequest ? null : request;
     final init = FetchOptions(
       body: body,
       method: request.method,
-      redirect: (request.followRedirects || redirectPolicy == RedirectPolicy.alwaysFollow)
+      redirect: (
+        request.followRedirects ||
+        (fetchRequest?.redirectPolicy ?? redirectPolicy) == RedirectPolicy.alwaysFollow
+      )
         ? RequestRedirect.follow
         : RequestRedirect.manual,
       headers: Headers.fromMap(request.headers),
-      mode: mode,
-      credentials: credentials,
-      cache: cache,
-      referrer: referrer,
-      referrerPolicy: referrerPolicy,
+      mode: fetchRequest?.mode ?? mode,
+      credentials: fetchRequest?.credentials ?? credentials,
+      cache: fetchRequest?.cache ?? cache,
+      referrer: fetchRequest?.referrer ?? referrer,
+      referrerPolicy: fetchRequest?.referrerPolicy ?? referrerPolicy,
+      integrity: fetchRequest?.integrity ?? '',
       keepalive: bodySize < 63 * 1024 && !streamRequests && request.persistentConnection,
       signal: abortController.signal,
       duplex: !streamRequests ? null : RequestDuplex.half,
@@ -174,7 +177,7 @@ class FetchClient extends BaseClient {
       // according to [RFC 2616](https://www.rfc-editor.org/rfc/rfc2616#section-3.5),
       // we'll handle this edge case anyway.
       final encoding = response.headers.get('Content-Encoding');
-      if (response.type == 'cors') {
+      if (response.responseType == ResponseType.cors) {
         // For cors response we should ensure that we actually have access to
         // Content-Encoding header, otherwise response can be encoded but
         // we won't be able to detect it.
