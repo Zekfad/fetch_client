@@ -1,3 +1,10 @@
+## 1.1.1
+
+- Bumped `fetch_api` to 2.1.0.
+- Create internal shim for non-JS environments: you can now import package
+  without conditional import and use enumerations in VM.
+  This is makes it easier to use `FetchClient` in Flutter via `kIsWeb`.
+
 ## 1.1.0
 
 > Requires Dart 3.3
