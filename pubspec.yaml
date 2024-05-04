@@ -8,6 +8,7 @@ repository: https://github.com/Zekfad/fetch_client
 issue_tracker: https://github.com/Zekfad/fetch_client/issues
 # documentation: https://pub.dev/documentation/fetch_client/latest/
 topics:
+  - web
   - fetch
   - http
 
