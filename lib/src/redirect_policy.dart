@@ -1,6 +1,6 @@
-import 'package:fetch_api/fetch_api.dart' show RequestRedirect, Response;
+import 'package:fetch_api/fetch_api.dart' /* show RequestRedirect, Response */ if (dart.library.io) '';
 
-import 'fetch_client.dart';
+import 'fetch_client.dart' if (dart.library.io) 'fetch_client_io_shim.dart';
 import 'fetch_response.dart';
 
 

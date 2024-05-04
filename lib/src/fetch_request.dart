@@ -1,7 +1,7 @@
-import 'package:fetch_api/fetch_api.dart';
+import 'package:fetch_api/enums.dart';
 import 'package:http/http.dart';
 
-import 'fetch_client.dart';
+import 'fetch_client.dart' if (dart.library.io) 'fetch_client_io_shim.dart';
 import 'fetch_response.dart';
 import 'on_done.dart';
 import 'redirect_policy.dart';
