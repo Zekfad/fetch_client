@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:js_interop';
 import 'dart:typed_data';
 
@@ -89,7 +90,17 @@ class FetchClient extends BaseClient {
     } else if (streamRequests) {
       body = RequestBody.fromReadableStream(
         ReadableStream(
-          ReadableStreamSource.fromStream(byteStream.cast<JSNumber>()),
+          ReadableStreamSource.fromStream(
+            byteStream.transform(
+              StreamTransformer.fromHandlers(
+                handleData: (data, sink) => sink.add(
+                  data is Uint8List
+                    ? data.toJS
+                    : Uint8List.fromList(data).toJS,
+                ),
+              ),
+            ),
+          ),
         ),
       );
       bodySize = -1;
@@ -97,7 +108,7 @@ class FetchClient extends BaseClient {
       final bytes = await byteStream.toBytes();
       body = bytes.isEmpty
         ? null
-        : RequestBody.fromTypedData(bytes);
+        : RequestBody.fromJSTypedArray(bytes.toJS);
       bodySize = bytes.lengthInBytes;
     }
 
@@ -303,8 +314,8 @@ class FetchClient extends BaseClient {
 
   /// Reads [reader] via [ReadableStreamDefaultReader.readAsStream] and
   /// optionally checks that read data have [expectedLength].
-  Stream<Uint8List> _readAsStream<T extends JSAny, AbortType extends JSAny>({
-    required ReadableStreamDefaultReader<T, AbortType> reader,
+  Stream<Uint8List> _readAsStream<AbortType extends JSAny>({
+    required ReadableStreamDefaultReader<JSUint8Array, AbortType> reader,
     required int? expectedLength,
     required Uri uri,
   }) async* {
@@ -312,7 +323,7 @@ class FetchClient extends BaseClient {
     var length = 0;
 
     try {
-      await for (final chunk in stream) {
+      await for (final JSUint8Array(toDart: chunk) in stream) {
         yield chunk;
         length += chunk.lengthInBytes;
         if (expectedLength != null && length > expectedLength)
