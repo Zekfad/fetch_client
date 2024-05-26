@@ -1,3 +1,8 @@
+## 1.1.2
+
+- Bumped `fetch_api` to 2.2.0.
+- Fixed WASM support.
+
 ## 1.1.1
 
 - Bumped `fetch_api` to 2.1.0.
