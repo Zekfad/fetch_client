@@ -1,4 +1,4 @@
-@TestOn('!js')
+@TestOn('vm')
 library;
 
 import 'package:fetch_client/fetch_client.dart';
