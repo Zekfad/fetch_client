@@ -4,10 +4,12 @@ import 'dart:typed_data';
 
 import 'package:fetch_api/fetch_api.dart';
 import 'package:http/http.dart' show BaseClient, BaseRequest, ClientException;
+import 'cancel_callback.dart';
 import 'fetch_request.dart';
 import 'fetch_response.dart';
 import 'on_done.dart';
 import 'redirect_policy.dart';
+import 'request_canceled_exception.dart';
 
 
 /// HTTP client based on Fetch API.
@@ -41,6 +43,9 @@ class FetchClient extends BaseClient {
   });
 
   /// The default request mode.
+  /// 
+  /// Mode is used to determine if cross-origin requests lead to valid
+  /// responses, and which properties of the response are readable.
   final RequestMode mode;
 
   /// The default credentials mode, defines what browsers do with credentials
@@ -72,7 +77,7 @@ class FetchClient extends BaseClient {
   /// for more info.
   final bool streamRequests;
 
-  final _abortCallbacks = <void Function()>[];
+  final _abortCallbacks = <CancelCallback>[];
 
   var _closed = false;
 
@@ -94,9 +99,9 @@ class FetchClient extends BaseClient {
             byteStream.transform(
               StreamTransformer.fromHandlers(
                 handleData: (data, sink) => sink.add(
-                  data is Uint8List
-                    ? data.toJS
-                    : Uint8List.fromList(data).toJS,
+                  (data is Uint8List
+                    ? data
+                    : Uint8List.fromList(data)).toJS,
                 ),
               ),
             ),
@@ -112,7 +117,7 @@ class FetchClient extends BaseClient {
       bodySize = bytes.lengthInBytes;
     }
 
-    final abortController = AbortController();
+    final abortController = AbortController<JSString>();
 
     final fetchRequest = request is! FetchRequest ? null : request;
     final init = FetchOptions(
@@ -169,11 +174,11 @@ class FetchClient extends BaseClient {
 
     final reader = response.body?.getReader();
 
-    late final void Function() abort;
-    abort = () {
+    late final CancelCallback abort;
+    abort = ([ reason, ]) {
       _abortCallbacks.remove(abort);
       reader?.cancel();
-      abortController.abort();
+      abortController.abort(reason?.toJS);
     };
     _abortCallbacks.add(abort);
 
@@ -222,6 +227,7 @@ class FetchClient extends BaseClient {
           reader: reader,
           expectedLength: expectedBodyLength,
           uri: request.url,
+          abortController: abortController,
         ),
       abort,
     );
@@ -249,7 +255,7 @@ class FetchClient extends BaseClient {
     required BaseRequest request,
     required Response initialResponse,
     required FetchOptions init,
-    required AbortController abortController,
+    required AbortController<JSString> abortController,
   }) async {
     init.requestRedirect = RequestRedirect.follow;
 
@@ -275,7 +281,7 @@ class FetchClient extends BaseClient {
     return FetchResponse(
       const Stream.empty(),
       302,
-      cancel: () {},
+      cancel: ([ reason, ]) {},
       url: Uri.parse(initialResponse.url),
       redirected: false,
       request: request,
@@ -292,14 +298,14 @@ class FetchClient extends BaseClient {
   }
 
   /// Aborts [abortController] if [close] is called while preforming an [action]. 
-  Future<T> _abortOnCloseSafeGuard<T, AbortType extends JSAny>(
+  Future<T> _abortOnCloseSafeGuard<T>(
     Future<T> Function() action,
-    AbortController<AbortType> abortController,
+    AbortController<JSString> abortController,
   ) async {
-    late final void Function() abortOnCloseSafeGuard;
-    abortOnCloseSafeGuard = () {
+    late final CancelCallback abortOnCloseSafeGuard;
+    abortOnCloseSafeGuard = ([ reason, ]) {
       _abortCallbacks.remove(abortOnCloseSafeGuard);
-      abortController.abort();
+      abortController.abort(reason?.toJS);
     };
     _abortCallbacks.add(abortOnCloseSafeGuard);
     try {
@@ -318,6 +324,7 @@ class FetchClient extends BaseClient {
     required ReadableStreamDefaultReader<JSUint8Array, AbortType> reader,
     required int? expectedLength,
     required Uri uri,
+    required AbortController<JSString> abortController,
   }) async* {
     final stream = reader.readAsStream();
     var length = 0;
@@ -329,6 +336,10 @@ class FetchClient extends BaseClient {
         if (expectedLength != null && length > expectedLength)
           throw ClientException('Content-Length is smaller than actual response length.', uri);
       }
+      // check if closed after stream is read, because canceling just forces
+      // reader to close shortly without throwing an exception
+      if (abortController.signal case AbortSignal(aborted: true, :final reason))
+        throw RequestCanceledException(reason?.toDart ?? '', uri);
       if (expectedLength != null && length < expectedLength)
         throw ClientException('Content-Length is larger than actual response length.', uri);
     } on ClientException {
@@ -346,7 +357,7 @@ class FetchClient extends BaseClient {
     if (!_closed) {
       _closed = true;
       for (final abort in _abortCallbacks.toList())
-        abort();
+        abort('Client closed');
     }
   }
 }

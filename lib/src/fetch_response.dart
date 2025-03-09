@@ -1,5 +1,7 @@
 import 'package:http/http.dart' show BaseResponseWithUrl, StreamedResponse;
 
+import 'cancel_callback.dart';
+
 
 /// [StreamedResponse] with additional capability to [cancel] request and access
 /// to final (after redirects) request [url].
@@ -20,7 +22,7 @@ class FetchResponse extends StreamedResponse implements BaseResponseWithUrl {
   });
 
   /// Cancels current request.
-  final void Function() cancel;
+  final CancelCallback cancel;
 
   /// Target resource url (the one after redirects, if there are some).
   @override
