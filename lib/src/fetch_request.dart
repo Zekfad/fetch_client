@@ -9,7 +9,7 @@ import 'redirect_policy.dart';
 
 /// Wraps request to provide fetch options overrides. 
 class FetchRequest<T extends BaseRequest> implements BaseRequest {
-  // Create new fetch request.
+  /// Create new fetch request.
   FetchRequest(this.request);
 
   /// Inner request to send.
@@ -126,7 +126,7 @@ class FetchRequest<T extends BaseRequest> implements BaseRequest {
   ByteStream finalize() => request.finalize();
 
   @override
-  Future<StreamedResponse> send() async {
+  Future<FetchResponse> send() async {
     final client = FetchClient();
 
     try {

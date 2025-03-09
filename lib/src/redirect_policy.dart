@@ -4,7 +4,7 @@ import 'fetch_client.dart' if (dart.library.io) 'fetch_client_io_shim.dart';
 import 'fetch_response.dart';
 
 
-/// How [FetchClient] should handle redirects.
+/// Policy that determines how [FetchClient] should handle redirects.
 enum RedirectPolicy {
   /// Default policy - always follow redirects.
   /// If redirect is occurred the only way to know about it is via

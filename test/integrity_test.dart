@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 
 
 void main() {
-  group('integrity tests', () {
+  group('integrity test', () {
     final client = FetchClient(mode: RequestMode.cors);
     final uri = Uri.parse('https://raw.githubusercontent.com/Zekfad/fetch_client/22c3a2732c4a89ef284827cba4a7e62a01535776/LICENSE');
 
