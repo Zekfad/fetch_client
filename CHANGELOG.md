@@ -1,3 +1,15 @@
+## 1.1.3
+
+- Fix possible unhandled promise rejection if underlying data stream is errored.
+- Update license years.
+- Throw `RequestCanceledException` with reason when using
+  `FetchResponse.cancel` or client is closed with request in-progress.
+  > Semantic is currently undefined and this is implementation specific
+  > behavior.
+  > 
+  > See [http#1192](https://github.com/dart-lang/http/issues/1192) for more
+  > info.
+
 ## 1.1.2
 
 - Bumped `fetch_api` to 2.2.0.
