@@ -1,6 +1,7 @@
 import 'package:http/http.dart' show BaseResponseWithUrl, StreamedResponse;
 
 import 'cancel_callback.dart';
+import 'request_canceled_exception.dart';
 
 
 /// [StreamedResponse] with additional capability to [cancel] request and access
@@ -21,7 +22,8 @@ class FetchResponse extends StreamedResponse implements BaseResponseWithUrl {
     super.reasonPhrase,
   });
 
-  /// Cancels current request.
+  /// Cancels current request and causes it to throw [RequestCanceledException]
+  /// with provided reason.
   final CancelCallback cancel;
 
   /// Target resource url (the one after redirects, if there are some).
