@@ -177,7 +177,9 @@ class FetchClient extends BaseClient {
     late final CancelCallback abort;
     abort = ([ reason, ]) {
       _abortCallbacks.remove(abort);
-      reader?.cancel();
+      // if stream is errored cancel rethrows error reason,
+      // here we dont really care about it
+      reader?.cancel().ignore();
       abortController.abort(reason?.toJS);
     };
     _abortCallbacks.add(abort);
