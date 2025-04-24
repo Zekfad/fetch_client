@@ -3,8 +3,8 @@
 - Fix possible unhandled promise rejection if underlying data stream is errored.
 - Update license years.
 - Throw `RequestCanceledException` with reason when using
+  > Semantic is currently undefined and this is the implementation specific
   `FetchResponse.cancel` or client is closed with request in-progress.
-  > Semantic is currently undefined and this is implementation specific
   > behavior.
   > 
   > See [http#1192](https://github.com/dart-lang/http/issues/1192) for more
@@ -18,16 +18,16 @@
 ## 1.1.1
 
 - Bumped `fetch_api` to 2.1.0.
-- Create internal shim for non-JS environments: you can now import package
-  without conditional import and use enumerations in VM.
-  This is makes it easier to use `FetchClient` in Flutter via `kIsWeb`.
+- Create internal shim for non-JS environments: you can now import the package
+  without conditional import and use enumerations in a VM.
+  This makes it easier to use `FetchClient` in Flutter via `kIsWeb`.
 
 ## 1.1.0
 
 > Requires Dart 3.3
 
 - Migrate to [`fetch_api`](https://pub.dev/packages/fetch_api) 2.0.0.
-  This requires Dart 3.3, but makes package WASM ready.
+  This requires Dart 3.3, but makes the package WASM ready.
 - Update [`http`](https://pub.dev/packages/http) constraint to `^1.2.0`.
 - **BREAKING**: `FetchResponse` `url` now is `Uri` instead of `String`.
 - `FetchResponse` now implements `BaseResponseWithUrl`.
@@ -48,7 +48,7 @@
 
 - Update [`http`](https://pub.dev/packages/http) constraint
   to `>=0.13.5 <2.0.0`.
-- Update test.
+- Update tests.
 
 ## 1.0.0
 
@@ -61,7 +61,7 @@
   redirects are returned on `io` platforms.
 - Added `streamRequests` option to `FetchClient`. This allows you to use Fetch
   request body streaming utilizing half-duplex connection.
-- Fixed dev dependencies versions to allow running on Dart 2.19.
+- Fixed dev dependency versions to allow running on Dart 2.19.
 
 ## 1.0.0-dev.4
 
@@ -71,7 +71,7 @@
   redirects, due to API limitations).
 - `FetchResponse`
   - `isRedirect` now is always `false` (because with disabled redirects
-    exception is throws on redirect, and browser always follows redirects
+    exception is thrown on redirect, and browser always follows redirects
     otherwise)
   - Added `redirected` flag, that indicates whether request was redirected.
   - Added docs.

@@ -26,7 +26,7 @@ class FetchResponse extends StreamedResponse implements BaseResponseWithUrl {
   /// with provided reason.
   final CancelCallback cancel;
 
-  /// Target resource url (the one after redirects, if there are some).
+  /// Target resource url (the one after redirects, if there were any).
   @override
   final Uri url;
 

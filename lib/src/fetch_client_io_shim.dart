@@ -45,9 +45,11 @@ class FetchClient extends BaseClient {
   /// @nodoc
   final bool streamRequests;
 
+  /// @nodoc
   @override
   Future<FetchResponse> send(BaseRequest request) async => throw UnsupportedError('Unsupported platform');
 
+  /// @nodoc
   @override
   void close() => throw UnsupportedError('Unsupported platform');
 }

@@ -16,7 +16,7 @@ It's a drop-in solution for extensions with
 * Cancel requests.
 * Support data streaming:
   * Get response as `Stream`.
-  * Optionally send `Stream` as request body (supported only in Chromium 105+
+  * Optionally, send `Stream` as request body (supported only in Chromium 105+
     based browsers).
 * Get access to redirect URL and status.
 * Support non-`200` responses (`fetch` will only fail on network errors).
@@ -27,7 +27,7 @@ It's a drop-in solution for extensions with
 
 ### Large payload
 
-This modules maps `keepalive` to [`BaseRequest.persistentConnection`](https://pub.dev/documentation/http/latest/http/BaseRequest/persistentConnection.html)
+This module maps `keepalive` to [`BaseRequest.persistentConnection`](https://pub.dev/documentation/http/latest/http/BaseRequest/persistentConnection.html)
 which is **`true`** by default.
 
 Fetch spec says that maximum request size with `keepalive` flag is 64KiB:
@@ -41,12 +41,12 @@ Fetch spec says that maximum request size with `keepalive` flag is 64KiB:
 
 Therefore if your request is larger than 64KiB (this includes some other data,
 such as headers) [`BaseRequest.persistentConnection`](https://pub.dev/documentation/http/latest/http/BaseRequest/persistentConnection.html)
-will be ignored and threated as `false`.
+will be ignored and treated as `false`.
 
 ### Request streaming
 
 Request streaming is supported only in Chromium 105+ based browsers and
-requires server to use HTTP/2 or HTTP/3.
+requires the server to use HTTP/2 or HTTP/3.
 
 See [MDN compatibility chart](https://developer.mozilla.org/en-US/docs/Web/API/Request#browser_compatibility)
-and [Chrome Developers blog](https://developer.chrome.com/articles/fetch-streaming-requests/#doesnt-work-on-http1x) for more info.
+and [Chrome Developers' blog](https://developer.chrome.com/articles/fetch-streaming-requests/#doesnt-work-on-http1x) for more info.

@@ -15,11 +15,12 @@ import 'request_canceled_exception.dart';
 /// HTTP client based on Fetch API.
 /// It does support streaming and can handle non 200 responses.
 /// 
+/// {@template fetch_client_docs}
 /// This implementation has some restrictions:
 /// * [BaseRequest.persistentConnection] is translated to
 ///   [FetchOptions.keepalive] (if [streamRequests] is disabled).
 /// * [BaseRequest.contentLength] is ignored.
-/// * When [BaseRequest.followRedirects] is `true` you can get redirect
+/// * When [BaseRequest.followRedirects] is `true`, you can get redirect
 ///   information via [FetchResponse.redirected] and [FetchResponse.url]).
 ///   If [BaseRequest.followRedirects] is `false` [redirectPolicy] takes place
 ///   and dictates [FetchClient] actions.
@@ -28,10 +29,13 @@ import 'request_canceled_exception.dart';
 ///   browsers and requires server to be HTTP/2 or HTTP/3.
 ///   
 ///   See [compatibility chart](https://developer.mozilla.org/en-US/docs/Web/API/Request#browser_compatibility)
-///   and [Chrome Developers blog](https://developer.chrome.com/articles/fetch-streaming-requests/#doesnt-work-on-http1x)
+///   and [Chrome Developers' blog](https://developer.chrome.com/articles/fetch-streaming-requests/#doesnt-work-on-http1x)
 ///   for more info.
+/// {@endtemplate}
 class FetchClient extends BaseClient {
   /// Create new HTTP client based on Fetch API.
+  /// 
+  /// {@macro fetch_client_docs}
   FetchClient({
     this.mode = RequestMode.noCors,
     this.credentials = RequestCredentials.sameOrigin,
@@ -70,10 +74,10 @@ class FetchClient extends BaseClient {
   /// Whether to use [ReadableStream] as body for requests streaming.
   /// 
   /// **NOTICE**: This feature is supported only in __Chromium 105+__ based browsers and
-  /// requires server to be HTTP/2 or HTTP/3.
+  /// requires the server to be HTTP/2 or HTTP/3.
   /// 
   /// See [compatibility chart](https://developer.mozilla.org/en-US/docs/Web/API/Request#browser_compatibility)
-  /// and [Chrome Developers blog](https://developer.chrome.com/articles/fetch-streaming-requests/#doesnt-work-on-http1x)
+  /// and [Chrome Developers' blog](https://developer.chrome.com/articles/fetch-streaming-requests/#doesnt-work-on-http1x)
   /// for more info.
   final bool streamRequests;
 
@@ -299,7 +303,7 @@ class FetchClient extends BaseClient {
     );
   }
 
-  /// Aborts [abortController] if [close] is called while preforming an [action]. 
+  /// Aborts [abortController] if [close] is called while performing an [action]. 
   Future<T> _abortOnCloseSafeGuard<T>(
     Future<T> Function() action,
     AbortController<JSString> abortController,
@@ -351,9 +355,11 @@ class FetchClient extends BaseClient {
     }
   }
 
-  /// Closes the client.
+  /// Closes the client and cleans up any resources associated with it.
   ///
-  /// This method also terminates all associated active requests.
+  /// Once [close] is called, no other methods should be called.
+  /// If [close] is called while other asynchronous methods are running,
+  /// all associated active requests will be terminated immediately.
   @override
   void close() {
     if (!_closed) {

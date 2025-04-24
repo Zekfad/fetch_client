@@ -1,5 +1,6 @@
 /// Fetch based HTTP client.
-/// Exports necessary fetch request options and client with response.
+/// Exports necessary fetch request options, request, client and response
+/// classes.
 // ignore: unnecessary_library_name
 library fetch_client;
 

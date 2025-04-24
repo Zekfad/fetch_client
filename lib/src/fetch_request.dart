@@ -9,7 +9,7 @@ import 'redirect_policy.dart';
 
 /// Wraps request to provide fetch options overrides. 
 class FetchRequest<T extends BaseRequest> implements BaseRequest {
-  /// Create new fetch request.
+  /// Create new fetch request by wrapping existing [request].
   FetchRequest(this.request);
 
   /// Inner request to send.
@@ -117,8 +117,9 @@ class FetchRequest<T extends BaseRequest> implements BaseRequest {
 
   /// Throws an error if this request has been finalized.
   void _checkFinalized() {
-    if (!finalized)
+    if (!finalized) {
       return;
+    }
     throw StateError("Can't modify a finalized Request.");
   }
 
