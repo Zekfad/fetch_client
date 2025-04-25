@@ -1,3 +1,8 @@
+## 1.1.4
+
+- Fix lint errors.
+- Use `package:zekfad_lints/lib.yaml` which aligns with core lints.
+
 ## 1.1.3
 
 - Fix possible unhandled promise rejection if underlying data stream is errored.
