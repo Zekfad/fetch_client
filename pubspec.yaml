@@ -2,7 +2,7 @@ name: fetch_client
 description: >
   Client for http package based on Fetch API, enables streamed and cancelable
   requests on web and more.
-version: 1.1.3
+version: 1.1.4
 homepage: https://github.com/Zekfad/fetch_client
 repository: https://github.com/Zekfad/fetch_client
 issue_tracker: https://github.com/Zekfad/fetch_client/issues
