@@ -87,8 +87,9 @@ class FetchClient extends BaseClient {
 
   @override
   Future<FetchResponse> send(BaseRequest request) async {
-    if (_closed)
+    if (_closed) {
       throw ClientException('Client is closed', request.url);
+    }
     final requestMethod = request.method.toUpperCase();
     final byteStream = request.finalize();
     final RequestBody? body;
@@ -156,25 +157,28 @@ class FetchClient extends BaseClient {
         response.type == 'opaqueredirect' &&
         !request.followRedirects &&
         redirectPolicy != RedirectPolicy.alwaysFollow
-      )
+      ) {
         return _probeRedirect(
           request: request,
           initialResponse: response,
           init: init,
           abortController: abortController,
         );
+      }
     } catch (e) {
       throw ClientException('Failed to execute fetch: $e', request.url);
     }
 
-    if (response.status == 0)
+    if (response.status == 0) {
       throw ClientException(
         'Fetch response status code 0',
         request.url,
       );
+    }
 
-    if (response.body == null && requestMethod != 'HEAD')
+    if (response.body == null && requestMethod != 'HEAD') {
       throw StateError('Invalid state: missing body with non-HEAD request.');
+    }
 
     final reader = response.body?.getReader();
 
@@ -192,8 +196,9 @@ class FetchClient extends BaseClient {
     final int? expectedBodyLength;
     if (response.headers.get('Content-Length') case final value?) {
       contentLength = int.tryParse(value);
-      if (contentLength == null || contentLength < 0)
+      if (contentLength == null || contentLength < 0) {
         throw ClientException('Content-Length header must be a positive integer value.', request.url);
+      }
 
       // Although `identity` SHOULD NOT be used in the Content-Encoding
       // according to [RFC 2616](https://www.rfc-editor.org/rfc/rfc2616#section-3.5),
@@ -210,16 +215,18 @@ class FetchClient extends BaseClient {
         ) && (
           encoding == null ||
           encoding.toLowerCase() == 'identity'
-        ))
+        )) {
           expectedBodyLength = contentLength;
-        else
+        } else {
           expectedBodyLength = null;
+        }
       } else {
         // In non-cors response we have access to Content-Encoding header
-        if (encoding == null || encoding.toLowerCase() == 'identity')
+        if (encoding == null || encoding.toLowerCase() == 'identity') {
           expectedBodyLength = contentLength;
-        else
+        } else {
           expectedBodyLength = null;
+        }
       }
     } else {
       contentLength = null;
@@ -265,10 +272,11 @@ class FetchClient extends BaseClient {
   }) async {
     init.requestRedirect = RequestRedirect.follow;
 
-    if (redirectPolicy == RedirectPolicy.probeHead)
+    if (redirectPolicy == RedirectPolicy.probeHead) {
       init.method = 'HEAD';
-    else
+    } else {
       init.method = 'GET';
+    }
 
     final Response response;
     try {
@@ -278,8 +286,9 @@ class FetchClient extends BaseClient {
       );
 
       // Cancel before even reading response
-      if (redirectPolicy == RedirectPolicy.probe)
+      if (redirectPolicy == RedirectPolicy.probe) {
         abortController.abort();
+      }
     } catch (e) {
       throw ClientException('Failed to execute probe fetch: $e', request.url);
     }
@@ -339,15 +348,18 @@ class FetchClient extends BaseClient {
       await for (final JSUint8Array(toDart: chunk) in stream) {
         yield chunk;
         length += chunk.lengthInBytes;
-        if (expectedLength != null && length > expectedLength)
+        if (expectedLength != null && length > expectedLength) {
           throw ClientException('Content-Length is smaller than actual response length.', uri);
+        }
       }
       // check if closed after stream is read, because canceling just forces
       // reader to close shortly without throwing an exception
-      if (abortController.signal case AbortSignal(aborted: true, :final reason))
+      if (abortController.signal case AbortSignal(aborted: true, :final reason)) {
         throw RequestCanceledException(reason?.toDart ?? '', uri);
-      if (expectedLength != null && length < expectedLength)
+      }
+      if (expectedLength != null && length < expectedLength) {
         throw ClientException('Content-Length is larger than actual response length.', uri);
+      }
     } on ClientException {
       rethrow;
     } catch (e) {
@@ -364,8 +376,9 @@ class FetchClient extends BaseClient {
   void close() {
     if (!_closed) {
       _closed = true;
-      for (final abort in _abortCallbacks.toList())
+      for (final abort in _abortCallbacks.toList()) {
         abort('Client closed');
+      }
     }
   }
 }

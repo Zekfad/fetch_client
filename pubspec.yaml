@@ -31,4 +31,4 @@ dev_dependencies:
       ref: master
       path: pkgs/http_client_conformance_tests
   test: ^1.25.5
-  zekfad_lints: ^2.2.0
+  zekfad_lints: ^2.3.0

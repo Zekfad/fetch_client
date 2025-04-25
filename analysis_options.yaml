@@ -1,5 +1,1 @@
-include: package:zekfad_lints/recommended.yaml
-
-linter:
-  rules:
-    public_member_api_docs: true
+include: package:zekfad_lints/lib.yaml
