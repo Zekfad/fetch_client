@@ -1,3 +1,16 @@
+## 1.2.0
+
+> Requires Dart 3.4
+
+- Bumped `http` to 1.5.0.
+- Support request cancellation via `Abortable` from `http`.
+  > You are not required to add `abortTrigger` to wrapping `FetchRequest` since
+  > it will inherit it by default.
+  > You can also just use `http`'s `AbortableRequest` directly if you don't
+  > need to customize `fetch` behavior on a request basis.
+- `RequestCanceledException` how implements `RequestAbortedException`.
+- `FetchRequest` how also implements `Abortable`.
+
 ## 1.1.4
 
 - Fix lint errors.
@@ -7,9 +20,10 @@
 
 - Fix possible unhandled promise rejection if underlying data stream is errored.
 - Update license years.
-- Throw `RequestCanceledException` with reason when using
+- Throw `RequestCanceledException` with reason when using `FetchResponse.cancel`
+  or client is closed with request in-progress.
+
   > Semantic is currently undefined and this is the implementation specific
-  `FetchResponse.cancel` or client is closed with request in-progress.
   > behavior.
   > 
   > See [http#1192](https://github.com/dart-lang/http/issues/1192) for more
