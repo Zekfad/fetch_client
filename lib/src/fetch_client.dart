@@ -3,7 +3,7 @@ import 'dart:js_interop';
 import 'dart:typed_data';
 
 import 'package:fetch_api/fetch_api.dart';
-import 'package:http/http.dart' show BaseClient, BaseRequest, ClientException;
+import 'package:http/http.dart' show Abortable, BaseClient, BaseRequest, ClientException;
 import 'cancel_callback.dart';
 import 'fetch_request.dart';
 import 'fetch_response.dart';
@@ -90,6 +90,7 @@ class FetchClient extends BaseClient {
     if (_closed) {
       throw ClientException('Client is closed', request.url);
     }
+
     final requestMethod = request.method.toUpperCase();
     final byteStream = request.finalize();
     final RequestBody? body;
@@ -146,12 +147,30 @@ class FetchClient extends BaseClient {
       duplex: !streamRequests ? null : RequestDuplex.half,
     );
 
+    ReadableStreamDefaultReader<JSUint8Array, JSAny>? reader;
+    late final CancelCallback abort;
+    abort = ([ reason, ]) {
+      _abortCallbacks.remove(abort);
+      // if stream is errored cancel rethrows error reason,
+      // here we dont really care about it
+      reader?.cancel().ignore();
+      abortController.abort(reason?.toJS);
+    };
+    _abortCallbacks.add(abort);
+
+    if (request case Abortable(:final abortTrigger?)) {
+      // Tear-offs of external extension type interop members are disallowed
+      // ignore: unnecessary_lambdas
+      unawaited(abortTrigger.whenComplete(() => abort()));
+    }
+
     final Response response;
     try {
       response = await _abortOnCloseSafeGuard(
         () => fetch(request.url.toString(), init),
         abortController,
       );
+      _throwIfAborted(abortController, request.url);
 
       if (
         response.type == 'opaqueredirect' &&
@@ -165,7 +184,10 @@ class FetchClient extends BaseClient {
           abortController: abortController,
         );
       }
+    } on RequestCanceledException {
+      rethrow;
     } catch (e) {
+      _throwIfAborted(abortController, request.url);
       throw ClientException('Failed to execute fetch: $e', request.url);
     }
 
@@ -180,17 +202,7 @@ class FetchClient extends BaseClient {
       throw StateError('Invalid state: missing body with non-HEAD request.');
     }
 
-    final reader = response.body?.getReader();
-
-    late final CancelCallback abort;
-    abort = ([ reason, ]) {
-      _abortCallbacks.remove(abort);
-      // if stream is errored cancel rethrows error reason,
-      // here we dont really care about it
-      reader?.cancel().ignore();
-      abortController.abort(reason?.toJS);
-    };
-    _abortCallbacks.add(abort);
+    reader = response.body?.getReader();
 
     final int? contentLength;
     final int? expectedBodyLength;
@@ -284,12 +296,16 @@ class FetchClient extends BaseClient {
         () => fetch(request.url.toString(), init),
         abortController,
       );
+      _throwIfAborted(abortController, request.url);
 
       // Cancel before even reading response
       if (redirectPolicy == RedirectPolicy.probe) {
         abortController.abort();
       }
+    } on RequestCanceledException {
+      rethrow;
     } catch (e) {
+      _throwIfAborted(abortController, request.url);
       throw ClientException('Failed to execute probe fetch: $e', request.url);
     }
 
@@ -312,7 +328,18 @@ class FetchClient extends BaseClient {
     );
   }
 
-  /// Aborts [abortController] if [close] is called while performing an [action]. 
+  /// Throws [RequestCanceledException] if [abortController] is aborted.
+  @pragma('wasm:prefer-inline')
+  @pragma('dart2js:prefer-inline')
+  void _throwIfAborted(AbortController<JSString> abortController, Uri uri) {
+    if (abortController.signal case AbortSignal(aborted: true, :final reason)) {
+      // Ignore error if request was aborted
+      // ignore: throw_in_finally
+      throw RequestCanceledException(reason?.toDart ?? '', uri);
+    }
+  }
+
+  /// Aborts [abortController] if [close] is called while performing an [action].
   Future<T> _abortOnCloseSafeGuard<T>(
     Future<T> Function() action,
     AbortController<JSString> abortController,
@@ -354,9 +381,7 @@ class FetchClient extends BaseClient {
       }
       // check if closed after stream is read, because canceling just forces
       // reader to close shortly without throwing an exception
-      if (abortController.signal case AbortSignal(aborted: true, :final reason)) {
-        throw RequestCanceledException(reason?.toDart ?? '', uri);
-      }
+      _throwIfAborted(abortController, uri);
       if (expectedLength != null && length < expectedLength) {
         throw ClientException('Content-Length is larger than actual response length.', uri);
       }

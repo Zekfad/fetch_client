@@ -8,12 +8,25 @@ import 'redirect_policy.dart';
 
 
 /// Wraps request to provide fetch options overrides. 
-class FetchRequest<T extends BaseRequest> implements BaseRequest {
+class FetchRequest<T extends BaseRequest> implements BaseRequest, Abortable {
   /// Create new fetch request by wrapping existing [request].
-  FetchRequest(this.request);
+  /// 
+  /// Stored [FetchRequest.abortTrigger] is modified in a such way so you can
+  /// cancel this request via wrapped [request] and/or via supplied
+  /// [abortTrigger]. 
+  FetchRequest(this.request, { Future<void>? abortTrigger, }) :
+    abortTrigger = switch(request) {
+      Abortable(abortTrigger: final innerTrigger?) => abortTrigger == null
+        ? innerTrigger
+        : Future.any([ abortTrigger, innerTrigger, ]),
+      _ => abortTrigger,
+    };
 
   /// Inner request to send.
   final T request;
+
+  @override
+  final Future<void>? abortTrigger;
 
   @override
   String get method => request.method;

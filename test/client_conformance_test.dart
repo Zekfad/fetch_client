@@ -14,9 +14,13 @@ void main() {
       canStreamResponseBody: true,
       redirectAlwaysAllowed: true,
       canWorkInIsolates: false,
-      canReceiveSetCookieHeaders: false,
-      canSendCookieHeaders: false,
       preservesMethodCase: false,
+      supportsFoldedHeaders: true,
+      correctlyHandlesNullHeaderValues: true,
+      canSendCookieHeaders: false,
+      canReceiveSetCookieHeaders: false,
+      supportsMultipartRequest: false,
+      supportsAbort: true,
     );
   });
 
@@ -30,9 +34,13 @@ void main() {
       canStreamResponseBody: true,
       redirectAlwaysAllowed: true,
       canWorkInIsolates: false,
-      canReceiveSetCookieHeaders: false,
-      canSendCookieHeaders: false,
       preservesMethodCase: false,
+      supportsFoldedHeaders: true,
+      correctlyHandlesNullHeaderValues: true,
+      canSendCookieHeaders: false,
+      canReceiveSetCookieHeaders: false,
+      supportsMultipartRequest: false,
+      supportsAbort: true,
     );
   });
 
@@ -46,9 +54,13 @@ void main() {
       canStreamResponseBody: true,
       redirectAlwaysAllowed: true,
       canWorkInIsolates: false,
-      canReceiveSetCookieHeaders: false,
-      canSendCookieHeaders: false,
       preservesMethodCase: false,
+      supportsFoldedHeaders: true,
+      correctlyHandlesNullHeaderValues: true,
+      canSendCookieHeaders: false,
+      canReceiveSetCookieHeaders: false,
+      supportsMultipartRequest: false,
+      supportsAbort: true,
     );
   });
 

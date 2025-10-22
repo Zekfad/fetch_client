@@ -2,10 +2,10 @@ import 'package:http/http.dart';
 
 
 /// An exception caused by canceling the request.
-class RequestCanceledException extends ClientException {
+class RequestCanceledException extends ClientException implements RequestAbortedException {
   /// Create new request cancelled exception.
   RequestCanceledException(this.reason, Uri uri) : super(
-    'request canceled${(reason?.isEmpty ?? true) ? '' : ': $reason'}',
+    'Request canceled${(reason?.isEmpty ?? true) ? '' : ': $reason'}',
     uri,
   );
 
