@@ -123,7 +123,9 @@ class FetchClient extends BaseClient {
       bodySize = bytes.lengthInBytes;
     }
 
-    final abortController = AbortController<JSString>();
+    // JSAny is used, because passing null to cancel can return instance of
+    // DOMException which would break type safety.
+    final abortController = AbortController<JSAny>();
 
     final fetchRequest = request is! FetchRequest ? null : request;
     final init = FetchOptions(
@@ -159,8 +161,6 @@ class FetchClient extends BaseClient {
     _abortCallbacks.add(abort);
 
     if (request case Abortable(:final abortTrigger?)) {
-      // Tear-offs of external extension type interop members are disallowed
-      // ignore: unnecessary_lambdas
       unawaited(abortTrigger.whenComplete(() => abort()));
     }
 
@@ -280,7 +280,7 @@ class FetchClient extends BaseClient {
     required BaseRequest request,
     required Response initialResponse,
     required FetchOptions init,
-    required AbortController<JSString> abortController,
+    required AbortController<JSAny> abortController,
   }) async {
     init.requestRedirect = RequestRedirect.follow;
 
@@ -331,18 +331,16 @@ class FetchClient extends BaseClient {
   /// Throws [RequestCanceledException] if [abortController] is aborted.
   @pragma('wasm:prefer-inline')
   @pragma('dart2js:prefer-inline')
-  void _throwIfAborted(AbortController<JSString> abortController, Uri uri) {
+  void _throwIfAborted(AbortController<JSAny> abortController, Uri uri) {
     if (abortController.signal case AbortSignal(aborted: true, :final reason)) {
-      // Ignore error if request was aborted
-      // ignore: throw_in_finally
-      throw RequestCanceledException(reason?.toDart ?? '', uri);
+      throw RequestCanceledException(reason?.toString() ?? '', uri);
     }
   }
 
   /// Aborts [abortController] if [close] is called while performing an [action].
   Future<T> _abortOnCloseSafeGuard<T>(
     Future<T> Function() action,
-    AbortController<JSString> abortController,
+    AbortController<JSAny> abortController,
   ) async {
     late final CancelCallback abortOnCloseSafeGuard;
     abortOnCloseSafeGuard = ([ reason, ]) {
@@ -362,34 +360,68 @@ class FetchClient extends BaseClient {
 
   /// Reads [reader] via [ReadableStreamDefaultReader.readAsStream] and
   /// optionally checks that read data have [expectedLength].
+  /// 
+  /// Canceling subscription to returned stream will abort request immediately.
   Stream<Uint8List> _readAsStream<AbortType extends JSAny>({
     required ReadableStreamDefaultReader<JSUint8Array, AbortType> reader,
     required int? expectedLength,
     required Uri uri,
-    required AbortController<JSString> abortController,
-  }) async* {
-    final stream = reader.readAsStream();
-    var length = 0;
-
-    try {
-      await for (final JSUint8Array(toDart: chunk) in stream) {
-        yield chunk;
-        length += chunk.lengthInBytes;
-        if (expectedLength != null && length > expectedLength) {
-          throw ClientException('Content-Length is smaller than actual response length.', uri);
+    required AbortController<JSAny> abortController,
+  }) {
+    late final StreamController<Uint8List> controller;
+    late final StreamSubscription<Uint8List> subscription;
+    controller = StreamController(
+      sync: true,
+      onListen: () async {
+        try {
+          final completer = Completer<void>.sync();
+          var length = 0;
+          subscription = reader.readAsStream().map((event) {
+            final chunk = event.toDart;
+            length += chunk.lengthInBytes;
+            if (expectedLength != null && length > expectedLength) {
+              throw ClientException('Content-Length is smaller than actual response length.', uri);
+            }
+            return chunk;
+          }).listen(
+            controller.add,
+            onError: completer.completeError,
+            onDone: completer.complete,
+            cancelOnError: true,
+          );
+          await completer.future;
+          await subscription.cancel();
+          _throwIfAborted(abortController, uri);
+          if (expectedLength != null && length < expectedLength) {
+            throw ClientException('Content-Length is larger than actual response length.', uri);
+          }
+        } catch (error, stackTrace) {
+          if (error is! ClientException) {
+            final errorText = error.toString();
+            // Convert AbortError to ClientException if needed
+            if (errorText.startsWith('AbortError') && abortController.signal.aborted) {
+              controller.addError(
+                RequestCanceledException(errorText, uri),
+                stackTrace,
+              );
+              return;
+            }
+            controller.addError(
+              ClientException('An error occurred while reading response body: $errorText', uri),
+              stackTrace,
+            );
+            return;
+          }
+          controller.addError(error, stackTrace);
+        } finally {
+          await controller.close();
         }
-      }
-      // check if closed after stream is read, because canceling just forces
-      // reader to close shortly without throwing an exception
-      _throwIfAborted(abortController, uri);
-      if (expectedLength != null && length < expectedLength) {
-        throw ClientException('Content-Length is larger than actual response length.', uri);
-      }
-    } on ClientException {
-      rethrow;
-    } catch (e) {
-      throw ClientException('Error occurred while reading response body: $e', uri);
-    }
+      },
+      onPause: () => subscription.pause(),
+      onResume: () => subscription.resume(),
+      onCancel: () => abortController.abort(),
+    );
+    return controller.stream;
   }
 
   /// Closes the client and cleans up any resources associated with it.
