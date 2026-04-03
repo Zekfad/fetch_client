@@ -1,3 +1,9 @@
+## 1.2.1
+
+- Fix response stream subscription and request synchronization:
+  In `dart2js` stream handler waited for an additional chunk after subscription
+  was canceled (`dart2wasm` seems to be unaffected).
+
 ## 1.2.0
 
 > Requires Dart 3.4
