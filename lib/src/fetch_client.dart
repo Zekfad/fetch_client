@@ -177,7 +177,7 @@ class FetchClient extends BaseClient {
         !request.followRedirects &&
         redirectPolicy != RedirectPolicy.alwaysFollow
       ) {
-        return _probeRedirect(
+        return await _probeRedirect(
           request: request,
           initialResponse: response,
           init: init,
