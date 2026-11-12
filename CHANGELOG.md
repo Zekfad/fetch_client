@@ -1,3 +1,7 @@
+## 1.2.2
+
+- Fix `HEAD` requests checking body size against header value instead of 0.
+
 ## 1.2.1
 
 - Fix response stream subscription and request synchronization:
