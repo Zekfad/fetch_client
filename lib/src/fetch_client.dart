@@ -216,7 +216,10 @@ class FetchClient extends BaseClient {
       // according to [RFC 2616](https://www.rfc-editor.org/rfc/rfc2616#section-3.5),
       // we'll handle this edge case anyway.
       final encoding = response.headers.get('Content-Encoding');
-      if (response.responseType == ResponseType.cors) {
+      if ('HEAD' == requestMethod) {
+        // HEAD requests are always without body, regardless of headers.
+        expectedBodyLength = 0;
+      } else if (response.responseType == ResponseType.cors) {
         // For cors response we should ensure that we actually have access to
         // Content-Encoding header, otherwise response can be encoded but
         // we won't be able to detect it.
